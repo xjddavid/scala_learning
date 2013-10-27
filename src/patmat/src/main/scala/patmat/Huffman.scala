@@ -26,9 +26,15 @@ object Huffman {
 
   // Part 1: Basics
 
-  def weight(tree: CodeTree): Int = ??? // tree match ...
+  def weight(tree: CodeTree): Int = tree match{
+    case Leaf(char: Char, w: Int) => w
+    case Fork(l:CodeTree, r: CodeTree, chars: List[Char], w: Int) => w
+  } // tree match ...
 
-  def chars(tree: CodeTree): List[Char] = ??? // tree match ...
+  def chars(tree: CodeTree): List[Char] = tree match{
+    case Leaf(char: Char, w: Int) => List(char)
+    case Fork(l:CodeTree, r: CodeTree, chars: List[Char], w: Int) => chars
+  } // tree match ...
 
   def makeCodeTree(left: CodeTree, right: CodeTree) =
     Fork(left, right, chars(left) ::: chars(right), weight(left) + weight(right))
@@ -71,7 +77,22 @@ object Huffman {
    *       println("integer is  : "+ theInt)
    *   }
    */
-  def times(chars: List[Char]): List[(Char, Int)] = ???
+  def times(chars: List[Char]): List[(Char, Int)] = {
+    var rc = List(chars.head) //list for characters
+    var ri = Array(1) //array of corresponding occurence
+    for (c <- chars.tail) {
+      if (rc.indexOf(c) != -1) ri(rc.indexOf(c)) += 1
+      else{
+        rc = rc ::: List(c)
+        ri = ri :+ 1
+      }
+    }
+    var re = List((rc(0),ri(0)))
+    for (i <- 1 to rc.length-1){
+      re = re:::List((rc(i),ri(i)))
+    }
+    re
+  }
 
   /**
    * Returns a list of `Leaf` nodes for a given frequency table `freqs`.
@@ -80,12 +101,25 @@ object Huffman {
    * head of the list should have the smallest weight), where the weight
    * of a leaf is the frequency of the character.
    */
-  def makeOrderedLeafList(freqs: List[(Char, Int)]): List[Leaf] = ???
+  def makeOrderedLeafList(freqs: List[(Char, Int)]): List[Leaf] = {
+    if (freqs.tail.isEmpty == true) List(new Leaf(freqs(0)._1,freqs(0)._2))
+    else {
+      var newfreqs = freqs.toArray
+      for (i <- 0 to freqs.length-2) {
+        if (newfreqs(i)._2 > newfreqs(i+1)._2) {
+          var temp = newfreqs(i)
+          newfreqs(i) = newfreqs(i+1)
+          newfreqs(i+1) = temp
+        }
+      }
+      makeOrderedLeafList(newfreqs.dropRight(1).toList):::List(new Leaf(newfreqs.last._1,newfreqs.last._2))
+    }
+  }
 
   /**
    * Checks whether the list `trees` contains only one single code tree.
    */
-  def singleton(trees: List[CodeTree]): Boolean = ???
+  def singleton(trees: List[CodeTree]): Boolean = trees.tail.isEmpty
 
   /**
    * The parameter `trees` of this function is a list of code trees ordered
@@ -99,7 +133,14 @@ object Huffman {
    * If `trees` is a list of less than two elements, that list should be returned
    * unchanged.
    */
-  def combine(trees: List[CodeTree]): List[CodeTree] = ???
+  def combine(trees: List[CodeTree]): List[CodeTree] = {
+    var w = weight(trees(0)) + weight(trees(1))
+    var c = chars(trees(0)):::chars(trees(1))
+    var nth =2
+    while (w> weight(trees(nth))) nth+=1
+    if (nth == 2) List(new Fork(trees(0),trees(1),c,w)):::(trees.slice(nth, trees.length))
+    else trees.slice(2, nth):::List(new Fork(trees(0),trees(1),c,w)):::(trees.slice(nth,trees.length))
+  }
 
   /**
    * This function will be called in the following way:
@@ -118,7 +159,11 @@ object Huffman {
    *    the example invocation. Also define the return type of the `until` function.
    *  - try to find sensible parameter names for `xxx`, `yyy` and `zzz`.
    */
-  def until(xxx: ???, yyy: ???)(zzz: ???): ??? = ???
+  //def until(xxx: ???, yyy: ???)(zzz: ???): ??? = ???
+  def until(xxx:  List[CodeTree] => Boolean, yyy: List[CodeTree] => List[CodeTree])(zzz: List[CodeTree]): List[CodeTree]= {
+    if (!xxx(zzz)) until(xxx,yyy)(yyy(zzz))
+    else zzz
+  }
 
   /**
    * This function creates a code tree which is optimal to encode the text `chars`.
