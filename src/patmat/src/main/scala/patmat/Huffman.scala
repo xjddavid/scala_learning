@@ -171,7 +171,9 @@ object Huffman {
    * The parameter `chars` is an arbitrary text. This function extracts the character
    * frequencies from that text and creates a code tree based on them.
    */
-  def createCodeTree(chars: List[Char]): CodeTree = ???
+  def createCodeTree(chars: List[Char]): CodeTree = {
+    until(singleton,combine)(makeOrderedLeafList(times(chars)))(0)
+  }
 
 
 
@@ -183,7 +185,37 @@ object Huffman {
    * This function decodes the bit sequence `bits` using the code tree `tree` and returns
    * the resulting list of characters.
    */
-  def decode(tree: CodeTree, bits: List[Bit]): List[Char] = ???
+  def left(tree: CodeTree): CodeTree = tree match{
+    case Leaf(char: Char, w: Int) => tree
+    case Fork(l:CodeTree, r: CodeTree, chars: List[Char], w: Int) => l
+  } // tree match ...
+  
+  def right(tree: CodeTree): CodeTree = tree match{
+    case Leaf(char: Char, w: Int) => tree
+    case Fork(l:CodeTree, r: CodeTree, chars: List[Char], w: Int) => r
+  } // tree match ...
+  
+  private def decodeprocessor(tree:CodeTree, bits: List[Bit],message: List[Char]): (List[Char],List[Bit]) = {
+    if (chars(tree).tail.isEmpty) {
+      (message:::chars(tree),bits)
+    }
+    else {
+      if (bits(0) == 0) decodeprocessor(left(tree),bits.tail,message)
+      else decodeprocessor(right(tree),bits.tail,message)
+    } 
+  } 
+
+  def decode(tree: CodeTree, bits: List[Bit]): List[Char] = {
+    var bl = bits
+    var message = decodeprocessor(tree,bl,Nil)._1
+    bl = decodeprocessor(tree,bl,Nil)._2
+    while(!bl.tail.isEmpty){
+      var re = decodeprocessor(tree,bl,message)
+      message = re._1
+      bl = re._2
+    }
+    message
+  }
 
   /**
    * A Huffman coding tree for the French language.
@@ -201,7 +233,7 @@ object Huffman {
   /**
    * Write a function that returns the decoded secret
    */
-  def decodedSecret: List[Char] = ???
+  def decodedSecret: List[Char] = decode(frenchCode,secret)
 
 
 
@@ -211,8 +243,17 @@ object Huffman {
    * This function encodes `text` using the code tree `tree`
    * into a sequence of bits.
    */
-  def encode(tree: CodeTree)(text: List[Char]): List[Bit] = ???
-
+  
+  private encodeprocessor(tree: CodeTree,)
+  def encode(tree: CodeTree)(text: List[Char]): List[Bit] = {
+    if (chars(tree).tail.isEmpty) {
+      (message:::chars(tree),bits)
+    }
+    else {
+      if (bits(0) == 0) decodeprocessor(left(tree),bits.tail,message)
+      else decodeprocessor(right(tree),bits.tail,message)
+    } 
+  }
 
   // Part 4b: Encoding using code table
 
